@@ -26,3 +26,21 @@ runDry=false
 if [ "${2:-}" == "--dry-run"]; then
 	runDry=true
 fi
+
+# Error handling if the specified task metadata file isn't found
+# Redirects output to standdard error and exits with code 3 to indicate invalid path
+if [ ! -f "$taskMetaFile" ]; then
+	echo "Task metadata file not found: $taskMetaFile">&2
+	exit 3
+fi
+
+# Reads a .task metadata file and stores its information in key-value pairs
+declare -A metaInfo							# Declare an indexed associative array	
+while IFS='=' read -r key value; do					# Read lines, elements before '=' go in key, after in value
+	[[ $key =~ ^\s*# ]] continue					# Read lines literally and ignore comments
+	key=$(echo "$key" | tr -d ' \t"')				# Remove spaces, tabs, and quotes
+	value=$(echo "$value" | sed -e 's/^\s*//' -e 's/\s*$//' -e 's/^"//' -e 's/"$//') # Removes leading/trailing spaces and quotes
+	if [ -n "$key" ]; then						# Stores the key-value in the array only if non-empty
+		metaInfo[$key]="$value"
+	fi
+done < "$taskMetaFile"							# Loop reads from the taskMetaFile
