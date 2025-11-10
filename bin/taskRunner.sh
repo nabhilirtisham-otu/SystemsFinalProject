@@ -44,3 +44,5 @@ while IFS='=' read -r key value; do					# Read lines, elements before '=' go in 
 		metaInfo[$key]="$value"
 	fi
 done < "$taskMetaFile"							# Loop reads from the taskMetaFile
+
+tID="#{metaInfo[tID]:-unnamedTask}"
