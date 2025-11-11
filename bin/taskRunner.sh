@@ -45,4 +45,17 @@ while IFS='=' read -r key value; do					# Read lines, elements before '=' go in 
 	fi
 done < "$taskMetaFile"							# Loop reads from the taskMetaFile
 
-tID="#{metaInfo[tID]:-unnamedTask}"
+# Maps array values into local variables
+tID="${metaInfo[tID]:-unnamedTask}"
+tCOMMAND="${metaInfo[tCOMMAND]}"
+tTIMEOUT="${metaInfo[tTIMEOUT]:-${defaultTIMEOUT:-30}}"
+tRETRIES="${metaInfo[tRETRIES]:-${defaultRETRIES:-3}}"
+tRETRYDELAY="${metaInfo[tRETRYDELAY]:-${defaultRETRYDELAY:-5}}"
+tNOTIFYSUCCESS="${metaInfo[tNOTIFYSUCCESS]:-${defaultNOTIFYSUCCESS:-false}}"
+tNOTIFYFAILURE="${metaInfo[tNOTIFYFAILURE]:-${defaultNOTIFYFAILURE:-true}}"
+
+# Creates an id for the current run and stores it in the the log file
+rID=$(date +%Y%m%d-%H%M%S)
+logDirectory="${LOGS:-/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject}/logs/tasks/${tID}"
+mkdir -p "$logDirectory"
+logFile="$logDirectory/${tID}run-${ID}.log"
