@@ -9,7 +9,7 @@ if [ -f "$CONFIG" ]; then						# If the CONFIG file exists, execute it
 	source "$CONFIG"
 fi
 
-# Defines how the file should be used, optionally letting users specify it to be a dry run
+# Defines how the file should be used, optionally letting users specify the current run to be a dry run
 defineUsage(){
 	echo "Usage: $0 <task-metadata-file> [--dry-run]"
 	exit 2
@@ -56,6 +56,24 @@ tNOTIFYFAILURE="${metaInfo[tNOTIFYFAILURE]:-${defaultNOTIFYFAILURE:-true}}"
 
 # Creates an id for the current run and stores it in the the log file
 rID=$(date +%Y%m%d-%H%M%S)
-logDirectory="${LOGS:-/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject}/logs/tasks/${tID}"
+logDirectory="${LOGS:-/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject}/logs/tasks/${tID}"	# Creates the directory for log files
 mkdir -p "$logDirectory"
-logFile="$logDirectory/${tID}run-${ID}.log"
+logFile="$logDirectory/${tID}run-${ID}.log"							# Creates the logFile 
+
+# Logs run information in the log file
+echo "tID=$tID" > "${logFile}"
+echo "rID=$rID" > "${logFile}"
+echo "tCOMMAND=$tCOMMAND" > "${logFile}"
+echo "tTIMEOUT=$tTIMEOUT" > "${logFile}"
+echo "tRETRIES=$tRETRIES" > "${logFile}"
+echo "tRETRYDELAY=$tRETRYDELAY" > "${logFile}"
+echo "startTime=$(date --iso-8601=seconds)" >> "${logFile}"
+
+# Prints dry run output
+if [ "$runDry" == true ]; then
+	echo "A dry run would run: ${tCOMMAND}"
+	echo "Dry run log path: ${logFile}"
+	exit 0
+fi
+
+
