@@ -1,4 +1,5 @@
-# This script executes a task - includes timeout, retrying, and logging functionality
+# Executes a task - incl. timeout, retrying, logging functionality
+# test
 
 set -euo pipefail
 
