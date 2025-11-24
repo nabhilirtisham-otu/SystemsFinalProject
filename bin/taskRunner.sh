@@ -1,5 +1,4 @@
 # Executes a task - incl. timeout, retrying, logging functionality
-# test
 
 set -euo pipefail
 
