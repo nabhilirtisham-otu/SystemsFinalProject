@@ -1,6 +1,6 @@
 #Executes a task - incl. timeout, retrying, logging functionality
 
-set -euo pipefail
+set -euo pipefail			#Strict mode to help catch errors (script fails faster and doesn't hide bugs)
 
 #Load configuration file defined in configs/default.conf
 SELFDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"			# Directory of the current file
