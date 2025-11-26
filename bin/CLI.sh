@@ -29,20 +29,35 @@ EOF
 userCMD="${1:-}"; shift || true         #cmd holds subcommand, remaining args in other variables
 
 case "$userCMD" in              #Do different things based on provided user command
-    create-task)                
+    create-task)
         tID="$1"; shift || { echo "Missing ID"; exit 2; }        #Take next arg as task ID, shift args, error handling
         tFile="$taskDir/${tID}.task"                 #Build path for new task file
         if [ -f "$tFile" ]; then echo "Task exists: $tFile"; exit 1; fi         #Check if file w/ provided name already exist, prints it if so
 
-        cat > "$tFile" <<TASK                #Stare here-doc, redirecting contents into tFile
-TASK_ID=$tID
-DESCRIPTION="User-created task $tID"
-COMMAND="echo Running $tID"
-TIMEOUT=60
-MAX_RETRIES=1
-RETRY_DELAY=5
-NOTIFY_ON_SUCCESS=false
-NOTIFY_ON_FAILURE=true
+        cat > "$tFile" <<TASK                #Start here-doc, redirecting contents into tFile, write task info into task file
+tID=$tID
+tDESC="User-created task $tID"
+tCOMMAND="echo Running $tID"
+tTIMEOUT=30
+tRETRIES=1
+tRETRYDELAY=5
+tNOFIYSUCCESS=false
+tNOTIFYFAILURE=true
 TASK
-        echo "Created $tFile"
+        echo "Created $tFile"               #Confirmation message
+        ;;
+
+    create-workflow)
+        wID="$1"; shift || { echo "Missing ID"; exit 2; }        #Take next arg as workflow ID, shift args, error handling
+        wFile="$workflowDir/${wID}.workflow"                 #Build path for new workflow file
+        if [ -f "$wFile" ]; then echo "Workflow exists"; exit 1; fi         #Check if file w/ provided name already exist, prints it if so
+
+        cat > "$wFile" <<WF                #Start here-doc, redirecting contents into wFile, write workflow info into workflow file
+wID=$wID
+wDESC="User-created workflow $wID"
+wTASKS=""
+wCONTINUEFAIL=false
+wNOTIFYCOMPLETE=false
+WF
+        echo "Created $wFile"
         ;;
