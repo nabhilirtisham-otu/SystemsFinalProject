@@ -1,0 +1,8 @@
+tID=demoSuccess
+tDESC="User-created task demoSuccess"
+tCOMMAND="echo Running demoSuccess"
+tTIMEOUT=30
+tRETRIES=1
+tRETRYDELAY=5
+tNOTIFYSUCCESS=false
+tNOTIFYFAILURE=true
