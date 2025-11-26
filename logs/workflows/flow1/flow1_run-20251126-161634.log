@@ -1,0 +1,10 @@
+wID=flow1
+rID=20251126-161634
+wTASKS=task1 sampleBad
+startTime=2025-11-26T16:16:34-05:00
+Running task: task1
+tRETURNCODE=0
+Running task: sampleBad
+tRETURNCODE=0
+END_TIME=2025-11-26T16:16:40-05:00
+STATUS=0

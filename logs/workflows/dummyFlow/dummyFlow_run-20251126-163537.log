@@ -1,0 +1,9 @@
+wID=dummyFlow
+rID=20251126-163537
+wTASKS=dummy task1
+startTime=2025-11-26T16:35:37-05:00
+Running task: dummy
+tRETURNCODE=1
+Task failed and workflow stops on failure.
+END_TIME=2025-11-26T16:35:43-05:00
+STATUS=1

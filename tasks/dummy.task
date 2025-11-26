@@ -1,0 +1,8 @@
+tID=dummy
+tDESC="User-created task dummy"
+tCOMMAND="/bin/false"
+tTIMEOUT=1
+tRETRIES=1
+tRETRYDELAY=5
+tNOTIFYSUCCESS=false
+tNOTIFYFAILURE=true
