@@ -76,7 +76,33 @@ if [ "$runDry" == true ]; then
 	exit 0
 fi
 
-attempt=0
+attemptNo=0
 exitCode=0
-while [ $attempt -le "$tRetries" ]; do				#Checks if the current attempt number is not over the max amount of tries
+while [ $attemptNo -le "$tRetries" ]; do				#Checks if current attempt number isn't over max amount of tries allowed
 	attempt=$((attempt+1))							#Increment attempt counter
+	echo "ATTEMPT NO: $attemptNo" >> "$logFile"				#Log attempt info.
+	echo "ATTEMPT_START_TIME=$(date --iso-8601=seconds)" >> "$logFile"
+	timeout --preserve-status "$tTIMEOUT" bash -c "$tCOMMAND" >> "$logFile" 2>&1 || exitCode=$?			#Execute user command (max "timeout" time to run), redirect stdout/stderr into log file and capture exit code if it fails
+	echo "ATTEMPT_END_TIME=$(date --iso-8601=seconds)" >> "$logFile"			#Log timestamp of attempt finish time
+	echo "ATTEMPT_EXIT_CODE=$exitCode" >> "$logFile"			#Log attempt exit code
+
+	if [ "$exitCode" -eq 0 ]; then				#If command successful
+		echo "ATTEMPT_END_TIME=$(date --iso-8601=seconds)" >> "$logFile"		#Write final end time for entire task run
+		if [ "${tNOTIFYSUCCESS,,}" = "true" ]; then				#If flag to notify upon command run success is enabled
+			/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/notifier.sh --task "$tID" --status "SUCCESS" --log "$logFile" || true			#Call notification script, pass id+status+log path, error handling if notification fails
+		fi
+		exit 0			#Exit taskRunner.sh
+	fi
+
+	if [ $attemptNo -le "$tRETRIES" ]; then		#If max retries hasn't been reached
+    	echo "Retrying after $tRETRYDELAY seconds:" >> "$logFile"			#Logs waiting and retry, including delay length
+    	sleep "$tRETRYDELAY"			#Pause script for tRETRYDELAY seconds
+	else
+		echo "Max retries reached. Exit code: $exitCode" >> "$logFile"			#All allowed attemptes used, log final exit code
+		echo "END_TIME=$(date --iso-8601=seconds)" >> "$logFile"			#Log final end time
+		if [ "${tNOTIFYFAILURE,,}" = "true" ]; then				#If notifying upon failure allowed
+			/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/notifier.sh --task "$tID" --status "FAILURE" --log "$logFile" || true		#Log info similar to above
+		fi
+		exit $exitCode			#Exit taskRunner.sh w/ final exit code
+	fi
+done
