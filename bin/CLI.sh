@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+#CLI for user interactions
+set -euo pipefail           #Error-handling options (strict)
+
+#Initialize directory variables
+baseDir="/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject"         #Root folder where project located
+taskDir="$baseDir/tasks"                  #Task metadata file folder location
+workflowDir="$baseDir/workflows"              #Workflow definition file folder location
+
+#Define usage instructions - here-document, expand script name, show available subcommands
+usage() {
+  cat <<EOF
+Usage: $0 <command> [args]
+
+Commands:
+  create-task <id>        Create task metadata
+  create-workflow <id>    Create workflow metadata
+  list-tasks              List all tasks
+  list-workflows          List all workflows
+  run-task <id>           Execute a task immediately
+  run-workflow <id>       Execute a workflow immediately
+  show-task <id>          Display raw task file
+  show-workflow <id>      Display raw workflow file
+EOF
+  exit 2            #Usage error exit code
+}
+
+#Get and store first positional argument, move all args left
+userCMD="${1:-}"; shift || true         #cmd holds subcommand, remaining args in other variables
+
+case "$userCMD" in              #Do different things based on provided user command
+    create-task)                
+        tID="$1"; shift || { echo "Missing ID"; exit 2; }        #Take next arg as task ID, shift args, error handling
+        tFile="$taskDir/${tID}.task"                 #Build path for new task file
+        if [ -f "$tFile" ]; then echo "Task exists: $tFile"; exit 1; fi         #Check if file w/ provided name already exist, prints it if so
+
+        cat > "$tFile" <<TASK                #Stare here-doc, redirecting contents into tFile
+TASK_ID=$tID
+DESCRIPTION="User-created task $tID"
+COMMAND="echo Running $tID"
+TIMEOUT=60
+MAX_RETRIES=1
+RETRY_DELAY=5
+NOTIFY_ON_SUCCESS=false
+NOTIFY_ON_FAILURE=true
+TASK
+        echo "Created $tFile"
+        ;;
