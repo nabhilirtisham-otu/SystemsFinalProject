@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#Overall test harness
 set -euo pipefail           #Error-handling options (strict)
 
 baseDir="/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject"              #Points to root dir

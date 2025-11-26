@@ -1,5 +1,4 @@
-# This script is a helper script used by sampleBad.sh to let it fail once and succeed the second time. It is used
-# for testing purposes.
+#Helper script used by sampleBad.sh leting it fail once and succeed the second time (used for testing purposes)
 
 flagFile = "/mnt/c/Users/Nabhi/SystemsFinalProject/examples/sampleBadHelper.flag"
 if [ ! -f "$flagFile" ]; then

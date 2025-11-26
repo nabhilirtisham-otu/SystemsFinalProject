@@ -48,7 +48,6 @@ IFS=' ' read -r -a wTASKS <<< "$taskStr"            #Set field separator to spac
 wCONTINUEFAIL="${wflow[wCONTINUEFAIL]:-false}"              #Sets wCONTINUEFAIL, wNOTIFYCOMPLETE flags (default to false)
 wNOTIFYCOMPLETE="${wflow[wNOTIFYCOMPLETE]:-false}"
 
-
 rID=$(date +%Y%m%d-%H%M%S)              #Run id timestamp
 logDir="${logDir:-/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/}/workflows/${wID}"          #Use log directory from config, default to root file prefix otherwise
 mkdir -p "$logDir"              #Create log directory for specific workflow
@@ -67,3 +66,45 @@ if [ "$dryRun" = true ]; then
   exit 0
 fi
 
+status=0                #Workflow overall status
+for t in "${wTASKS[@]}"; do          #For every tID in the wTASKS array
+  echo "Running task: $t" >> "$logFile"             #Log task being run
+  taskMeta="/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/tasks/${t}.task"           #Path to task metadata file
+
+  if [ ! -f "$taskMeta" ]; then             #Check if task metadata file exists
+    echo "Task metadata missing: $taskMeta" >> "$logFile"           #Display and log error
+    status=2
+    if [ "${wCONTINUEFAIL,,}" = "false" ]; then             #Check if workflow can keep going if task is missing
+      echo "Aborting workflow due to missing task." >> "$logFile"               #If not, abort workflow
+      break
+    else
+      continue                  #Continue otherwise
+    fi
+  fi
+
+  #Run task and capture exit code, catprures error w/o exiting entire script, error handling if rc=$? (store exit code) fails
+  /mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/taskRunner.sh "$TASK_META" || returnCode=$? || returnCode=0
+  returnCode=${returnCode:-0}               #Set default code to 0
+
+  echo "tRETURNCODE=$returnCode" >> "$logFile"              #Log task return code
+
+  if [ "$returnCode" -ne 0 ]; then                  #If task failed
+    status=1                    #Mark as having at least one failed task
+    if [ "${wCONTINUEFAIL,,}" = "false" ]; then                 #If not allowed to continue after failure
+      echo "Task failed and workflow stops on failure." >> "$logFile"               #Log workflow stoppage due to failure
+      break
+    fi
+  fi
+done
+
+echo "ATTEMPT_END_TIME=$(date --iso-8601=seconds)" >> "$logFile"                #Log workflow ending time
+echo "STATUS=$status" >> "$logFile"                #Log finall overall status
+
+#Notify upon completion if set, provide wID, status, and logFile path
+if [ "${wNOTIFYCOMPLETE,,}" = "true" ]; then
+  if command -v /mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/notifier.sh >/dev/null 2>&1; then
+    /mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/notifier.sh --task "$wID" --status "$status" --log "$logFile" || true
+  fi
+fi
+
+exit $status                #Exit w/ workflow overall status
