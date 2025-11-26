@@ -1,6 +1,6 @@
 tID=sampleBad
 tDESC="This task is a sample task that fails and then succeeds."
-tCOMMAND="/mnt/c/Users/Nabhi/SystemsFinalProject/examples/sampleBadHelper.sh"
+tCOMMAND="/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/examples/sampleBadHelper.sh"
 tUSER=$(whoami)
 tTIMEOUT=30
 tRETRIES=3

@@ -1,0 +1,8 @@
+tID=demoFlaky
+tDESC="User-created task demoFlaky"
+tCOMMAND="/bin/false"
+tTIMEOUT=30
+tRETRIES=1
+tRETRYDELAY=5
+tNOTIFYSUCCESS=false
+tNOTIFYFAILURE=true

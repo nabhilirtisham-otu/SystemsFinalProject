@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-#Overall test harness
-set -euo pipefail           #Error-handling options (strict)
+# Overall test harness
+set -euo pipefail
 
-baseDir="/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject"              #Points to root dir
-binDir="$baseDir/bin"                   #Point to bin folder in project
+#directory variables
+baseDir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+binDir="$baseDir/bin"
 
-#Runs successful task
+#runs sampleGood task
 echo "Running sampleGood.task (succeeds)"
-$binDir/taskRunner.sh "$baseDir/tasks/sampleGood.task"
+"$binDir/taskRunner.sh" "$baseDir/tasks/sampleGood.task"
 
-#Runs failing task
+#runs sampleBad task
 echo "Running sampleBad.task (fails once, then succeeds w/ retries)"
-$binDir/taskRunner.sh "$baseDir/tasks/sampleBad.task"
+"$binDir/taskRunner.sh" "$baseDir/tasks/sampleBad.task"
 
-#Runs sequential workflow
+#runs sampleFlow workflow
 echo "Running sampleFlow.workflow"
-$binDir/workflowRunner.sh "$baseDir/workflows/sampleFlow.workflow"
+"$binDir/workflowRunner.sh" "$baseDir/workflows/sampleFlow.workflow"

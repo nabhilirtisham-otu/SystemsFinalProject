@@ -1,110 +1,117 @@
 #!/usr/bin/env bash
-#Executes tasks in a workflow
-set -euo pipefail           #Error-handling options (strict)
+# Executes tasks in a workflow with optional continue-on-fail and notifications.
+set -euo pipefail         #errors not masked - strict mode
 
-#Checks if config file exists, loads it if it does
-confFile="/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/configs/default.conf"
-if [ -f "$confFile" ]; then
-  source "$confFile"
-fi
+#directory variables
+baseDir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+confFile="$baseDir/configs/default.conf"
+[ -f "$confFile" ] && source "$confFile"
 
-#Function to display usage information
+#usage instructions
 usage() {
   echo "Usage: $0 <workflow-file> [--dry-run]"
   exit 2
 }
 
-#If less than 1 arg provided, display usage info
-if [ $# -lt 1 ]; then
-  usage
-fi
+#checks if enough arguments provided
+[ $# -ge 1 ] || usage
 
-wFILE="$1"              #Path to workflow definition file
-dryRun=false            #Dry run flag default false
-if [ "${2:-}" == "--dry-run" ]; then            #Set dry run flag to true if specified so
+#get workflow metafile
+wFILE="$1"
+
+#set dry run flag
+dryRun=false
+if [ "${2:-}" = "--dry-run" ]; then
   dryRun=true
 fi
 
-#Check if workflow file exists, print error message if not
+#if workflow file not found
 if [ ! -f "$wFILE" ]; then
   echo "Workflow file not found: $wFILE" >&2
   exit 3
 fi
 
-#Read workflow metadata
-declare -A wflow                    #Associative array storing workflow properties read from file
-while IFS='=' read -r key value; do             #Read workflow line by line, parse into wf array
-  [[ $key =~ ^\s*# ]] && continue               #Ignore comment line
-  key=$(echo "$key" | tr -d ' \t"')             #Strip spaces, tabs, double-quotes
-  value=$(echo "$value" | sed -e 's/^\s*//' -e 's/\s*$//' -e 's/^"//' -e 's/"$//')          #Remove whitespace, double-quotes (clean value string)
-  if [ -n "$key" ]; then                #Process key if non-empty
-    wflow[$key]="$value"                #Store key-value pair in wflow
+#declare array and store sanitized key-value pairs
+declare -A wflow
+while IFS='=' read -r key value; do
+  [[ $key =~ ^\s*# ]] && continue
+  key=$(echo "$key" | tr -d ' \t"')
+  value=$(echo "$value" | sed -e 's/^\s*//' -e 's/\s*$//' -e 's/^"//' -e 's/"$//')
+  if [ -n "$key" ]; then
+    wflow[$key]="$value"
   fi
-done < "$wFILE"                 #Loop to read from workflow file
+done < "$wFILE"
 
-wID="${wflow[wID]:-unnamedWf}"          #Read workflow id from wflow, default to unnamedWf
-taskStr="${wflow[wTASKS]:-}"               #Read tasks field, default to empty string
-IFS=' ' read -r -a wTASKS <<< "$taskStr"            #Set field separator to space, split string into TASKS array, feed string to read
-wCONTINUEFAIL="${wflow[wCONTINUEFAIL]:-false}"              #Sets wCONTINUEFAIL, wNOTIFYCOMPLETE flags (default to false)
+#store workflow ID, tasks within the workflow, and workflow flags
+wID="${wflow[wID]:-unnamedWf}"
+taskStr="${wflow[wTASKS]:-}"
+IFS=' ' read -r -a wTASKS <<< "$taskStr"
+wCONTINUEFAIL="${wflow[wCONTINUEFAIL]:-false}"
 wNOTIFYCOMPLETE="${wflow[wNOTIFYCOMPLETE]:-false}"
 
-rID=$(date +%Y%m%d-%H%M%S)              #Run id timestamp
-logDir="${logDir:-/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/}/workflows/${wID}"          #Use log directory from config, default to root file prefix otherwise
-mkdir -p "$logDir"              #Create log directory for specific workflow
-logFile="$logDir/${wID}_run-${rID}.log"             #Log file path for current workflow run
+#set run id and create log directory+file for workflow
+rID=$(date +%Y%m%d-%H%M%S)
+logDir="${LOGS:-$baseDir/logs}/workflows/${wID}"
+mkdir -p "$logDir"
+logFile="$logDir/${wID}_run-${rID}.log"
 
-#Initial log header - log workflow id being run, run id, tasks in workflow, start time
-echo "wID=$wID" > "$logFile"
-echo "rID=$rID" >> "$logFile"
-echo "wTASKS=${wTASKS[*]}" >> "$logFile"
-echo "startTime=$(date --iso-8601=seconds)" >> "$logFile"
+#log workflow information
+{
+  echo "wID=$wID"
+  echo "rID=$rID"
+  echo "wTASKS=${wTASKS[*]}"
+  echo "startTime=$(date --iso-8601=seconds)"
+} > "$logFile"
 
-#Dry run simulation
+#dry run simulation
 if [ "$dryRun" = true ]; then
   echo "[DRY RUN] Workflow $wID tasks: ${wTASKS[*]}"
   echo "Log path: $logFile"
   exit 0
 fi
 
-status=0                #Workflow overall status
-for t in "${wTASKS[@]}"; do          #For every tID in the wTASKS array
-  echo "Running task: $t" >> "$logFile"             #Log task being run
-  taskMeta="/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/tasks/${t}.task"           #Path to task metadata file
+#run and log tasks in workflow
+status=0
+for t in "${wTASKS[@]}"; do
+  echo "Running task: $t" >> "$logFile"
+  taskMeta="$baseDir/tasks/${t}.task"
 
-  if [ ! -f "$taskMeta" ]; then             #Check if task metadata file exists
-    echo "Task metadata missing: $taskMeta" >> "$logFile"           #Display and log error
+  #if task metadata not found
+  if [ ! -f "$taskMeta" ]; then
+    echo "Task metadata missing: $taskMeta" >> "$logFile"
     status=2
-    if [ "${wCONTINUEFAIL,,}" = "false" ]; then             #Check if workflow can keep going if task is missing
-      echo "Aborting workflow due to missing task." >> "$logFile"               #If not, abort workflow
+    if [ "${wCONTINUEFAIL,,}" = "false" ]; then
+      echo "Aborting workflow due to missing task." >> "$logFile"
       break
     else
-      continue                  #Continue otherwise
+      continue
     fi
   fi
 
-  #Run task and capture exit code, catprures error w/o exiting entire script, error handling if rc=$? (store exit code) fails
-  /mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/taskRunner.sh "$TASK_META" || returnCode=$? || returnCode=0
-  returnCode=${returnCode:-0}               #Set default code to 0
+  #retrieve and log task/workflow return code
+  returnCode=0
+  "$baseDir/bin/taskRunner.sh" "$taskMeta" || returnCode=$?
+  echo "tRETURNCODE=$returnCode" >> "$logFile"
 
-  echo "tRETURNCODE=$returnCode" >> "$logFile"              #Log task return code
-
-  if [ "$returnCode" -ne 0 ]; then                  #If task failed
-    status=1                    #Mark as having at least one failed task
-    if [ "${wCONTINUEFAIL,,}" = "false" ]; then                 #If not allowed to continue after failure
-      echo "Task failed and workflow stops on failure." >> "$logFile"               #Log workflow stoppage due to failure
+  #log and display
+  if [ "$returnCode" -ne 0 ]; then
+    status=1
+    if [ "${wCONTINUEFAIL,,}" = "false" ]; then
+      echo "Task failed and workflow stops on failure." >> "$logFile"
       break
     fi
   fi
 done
 
-echo "ATTEMPT_END_TIME=$(date --iso-8601=seconds)" >> "$logFile"                #Log workflow ending time
-echo "STATUS=$status" >> "$logFile"                #Log finall overall status
+#record workflow end time and status
+echo "END_TIME=$(date --iso-8601=seconds)" >> "$logFile"
+echo "STATUS=$status" >> "$logFile"
 
-#Notify upon completion if set, provide wID, status, and logFile path
+#display success/error message
 if [ "${wNOTIFYCOMPLETE,,}" = "true" ]; then
-  if command -v /mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/notifier.sh >/dev/null 2>&1; then
-    /mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/notifier.sh --task "$wID" --status "$status" --log "$logFile" || true
-  fi
+  finalStatus=$([ "$status" -eq 0 ] && echo "SUCCESS" || echo "FAILURE")
+  "$baseDir/bin/notifier.sh" --task "$wID" --status "$finalStatus" --log "$logFile" || true
 fi
 
-exit $status                #Exit w/ workflow overall status
+#exit with status code
+exit $status

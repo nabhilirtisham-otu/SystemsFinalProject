@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-#CLI for user interactions
-set -euo pipefail           #Error-handling options (strict)
+# CLI for user interactions
+set -euo pipefail         #errors not masked - strict mode
 
-#Initialize directory variables
-baseDir="/mnt/c/Users/Nabhi/Downloads/SystemsFinalProject"         #Root folder where project located
-taskDir="$baseDir/tasks"                  #Task metadata file folder location
-workflowDir="$baseDir/workflows"              #Workflow definition file folder location
+#directory variables for base, tasks, and workflows
+baseDir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+taskDir="$baseDir/tasks"
+workflowDir="$baseDir/workflows"
 
-#Define usage instructions - here-document, expand script name, show available subcommands
+#usage instructions
 usage() {
   cat <<EOF
 Usage: $0 <command> [args]
@@ -22,74 +22,81 @@ Commands:
   show-task <id>          Display raw task file
   show-workflow <id>      Display raw workflow file
 EOF
-  exit 2            #Usage error exit code
+  exit 2
 }
 
-#Get and store first positional argument, move all args left
-userCMD="${1:-}"; shift || true         #userCMD holds subcommand, remaining args in other variables
+#takes user command to perform
+userCMD="${1:-}"; shift || true
 
-case "$userCMD" in              #Do different things based on provided user command
-    create-task)
-        tID="$1"; shift || { echo "Missing ID"; exit 2; }        #Take next arg as task ID, shift args, error handling
-        tFile="$taskDir/${tID}.task"                 #Build path for new task file
-        if [ -f "$tFile" ]; then echo "Task exists: $tFile"; exit 1; fi         #Check if file w/ provided name already exist, prints it if so
+#performs different things based on user command input
+case "$userCMD" in
+  create-task)
+    tID="${1:-}"; shift || { echo "Missing ID"; exit 2; }     #Creates task, error handling for ID
+    [ -n "$tID" ] || { echo "Missing ID"; exit 2; }
+    tFile="$taskDir/${tID}.task"                              #Check if task exists
+    if [ -f "$tFile" ]; then echo "Task exists: $tFile"; exit 1; fi
 
-        cat > "$tFile" <<TASK                #Start here-doc, redirecting contents into tFile, write task info into task file
+    cat > "$tFile" <<TASK                                     #Here-document to set task details
 tID=$tID
 tDESC="User-created task $tID"
 tCOMMAND="echo Running $tID"
 tTIMEOUT=30
 tRETRIES=1
 tRETRYDELAY=5
-tNOFIYSUCCESS=false
+tNOTIFYSUCCESS=false
 tNOTIFYFAILURE=true
 TASK
-        echo "Created $tFile"               #Confirmation message
-        ;;
+    echo "Created $tFile"
+    ;;
 
-    create-workflow)
-        wID="$1"; shift || { echo "Missing ID"; exit 2; }        #Take next arg as workflow ID, shift args, error handling
-        wFile="$workflowDir/${wID}.workflow"                 #Build path for new workflow file
-        if [ -f "$wFile" ]; then echo "Workflow exists"; exit 1; fi         #Check if file w/ provided name already exist, prints it if so
+  create-workflow)
+    wID="${1:-}"; shift || { echo "Missing ID"; exit 2; }     #Same as above but for workflows
+    [ -n "$wID" ] || { echo "Missing ID"; exit 2; }
+    wFile="$workflowDir/${wID}.workflow"
+    if [ -f "$wFile" ]; then echo "Workflow exists"; exit 1; fi
 
-        cat > "$wFile" <<WF                #Start here-doc, redirecting contents into wFile, write workflow info into workflow file
+    cat > "$wFile" <<WF
 wID=$wID
 wDESC="User-created workflow $wID"
 wTASKS=""
 wCONTINUEFAIL=false
 wNOTIFYCOMPLETE=false
 WF
-        echo "Created $wFile"
-        ;;
+    echo "Created $wFile"
+    ;;
 
-    list-tasks)
-        ls -1 "$taskDir"/*.task 2>/dev/null || echo "No tasks found"            #List every .task file on its own line, error handling
-        ;;
+  list-tasks)
+    ls -1 "$taskDir"/*.task 2>/dev/null || echo "No tasks found"      #List tasks and workflows
+    ;;
 
-    list-workflows)
-        ls -1 "$workflowDir"/*.workflow 2>/dev/null || echo "No workflows found"                    #List every .workflow file on its own line, error handling
-        ;;
-    
-    run-task)
-        tID="$1"; shift || { echo "Missing ID"; exit 2; }           #Get task ID and shift args, error handling
-        /mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/taskRunner.sh "$taskDir/${tID}.task"            #Call task runner script, w/ full path to task metadata file
-        ;;
-        
-    run-workflow)
-        wID="$1"; shift || { echo "Missing ID"; exit 2; }           #Get workflow ID and shift args, error handling
-        /mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/workflowRunner.sh "$workflowDir/${wID}.workflow"            #Call workflow runner script, w/ full path to workflow metadata file
-        ;;
-    
-    show-task)
-        tID="$1"; shift || { echo "Missing ID"; exit 2; }           #Get task ID and shift args, error handling
-        cat "$taskDir/${tID}.task"              #Print contents of specified task file
-        ;;
+  list-workflows)
+    ls -1 "$workflowDir"/*.workflow 2>/dev/null || echo "No workflows found"
+    ;;
 
-    show-workflow)
-        wID="$1"; shift || { echo "Missing ID"; exit 2; }           #Get workflow ID and shift args, error handling
-        cat "$workflowDir/${wID}.workflow"              #Print contents of specified workflow file
-        ;;
-    
-    *)          #Default
-        usage ;;
+  run-task)
+    tID="${1:-}"; shift || { echo "Missing ID"; exit 2; }             #Run task and workflows
+    [ -n "$tID" ] || { echo "Missing ID"; exit 2; }
+    "$baseDir/bin/taskRunner.sh" "$taskDir/${tID}.task"
+    ;;
+
+  run-workflow)
+    wID="${1:-}"; shift || { echo "Missing ID"; exit 2; }
+    [ -n "$wID" ] || { echo "Missing ID"; exit 2; }
+    "$baseDir/bin/workflowRunner.sh" "$workflowDir/${wID}.workflow"
+    ;;
+
+  show-task)
+    tID="${1:-}"; shift || { echo "Missing ID"; exit 2; }             #Display all current tasks and workflows
+    [ -n "$tID" ] || { echo "Missing ID"; exit 2; }
+    cat "$taskDir/${tID}.task"
+    ;;
+
+  show-workflow)
+    wID="${1:-}"; shift || { echo "Missing ID"; exit 2; }
+    [ -n "$wID" ] || { echo "Missing ID"; exit 2; }
+    cat "$workflowDir/${wID}.workflow"
+    ;;
+
+  *)
+    usage ;;        #default
 esac

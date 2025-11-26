@@ -1,12 +1,17 @@
-#Helper script used by sampleBad.sh leting it fail once and succeed the second time (used for testing purposes)
+#!/usr/bin/env bash
+# Helper script used by sampleBad.task: fails once, then succeeds.
 
-flagFile = "/mnt/c/Users/Nabhi/SystemsFinalProject/examples/sampleBadHelper.flag"
+#directory/file variables
+baseDir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+flagFile="$baseDir/examples/sampleBadHelper.flag"
+
+#create a flagFile to let the sampleBad run succeed on its second attempt
 if [ ! -f "$flagFile" ]; then
-	echo "First run fails intentionally"
-	mkdir -p "$(dirname "$flagFile")"
-	touch $flagfile
-	exit 1
+  echo "First run fails intentionally"
+  mkdir -p "$(dirname "$flagFile")"
+  touch "$flagFile"
+  exit 1
 else
-	echo "Second run succeeds"
-	exit 0
+  echo "Second run succeeds"
+  exit 0
 fi
