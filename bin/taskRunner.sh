@@ -4,9 +4,9 @@ set -euo pipefail			#Strict mode to help catch errors (script fails faster and d
 
 #Load configuration file defined in configs/default.conf
 SELFDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"			# Directory of the current file
-CONFIG="/mnt/c/Users/Nabhi/SystemsFinalProject/configs/default.conf"
-if [ -f "$CONFIG" ]; then						# If the CONFIG file exists, execute it
-	source "$CONFIG"
+confFile="/mnt/c/Users/Nabhi/SystemsFinalProject/configs/default.conf"
+if [ -f "$confFile" ]; then						# If config file exists, execute it
+	source "$confFile"
 fi
 
 #Defines how the file should be used, optionally letting users run a dry run
