@@ -26,7 +26,7 @@ EOF
 }
 
 #Get and store first positional argument, move all args left
-userCMD="${1:-}"; shift || true         #cmd holds subcommand, remaining args in other variables
+userCMD="${1:-}"; shift || true         #userCMD holds subcommand, remaining args in other variables
 
 case "$userCMD" in              #Do different things based on provided user command
     create-task)
@@ -61,3 +61,35 @@ wNOTIFYCOMPLETE=false
 WF
         echo "Created $wFile"
         ;;
+
+    list-tasks)
+        ls -1 "$taskDir"/*.task 2>/dev/null || echo "No tasks found"            #List every .task file on its own line, error handling
+        ;;
+
+    list-workflows)
+        ls -1 "$workflowDir"/*.workflow 2>/dev/null || echo "No workflows found"                    #List every .workflow file on its own line, error handling
+        ;;
+    
+    run-task)
+        tID="$1"; shift || { echo "Missing ID"; exit 2; }           #Get task ID and shift args, error handling
+        /mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/taskRunner.sh "$taskDir/${tID}.task"            #Call task runner script, w/ full path to task metadata file
+        ;;
+        
+    run-workflow)
+        wID="$1"; shift || { echo "Missing ID"; exit 2; }           #Get workflow ID and shift args, error handling
+        /mnt/c/Users/Nabhi/Downloads/SystemsFinalProject/bin/workflowRunner.sh "$workflowDir/${wID}.workflow"            #Call workflow runner script, w/ full path to workflow metadata file
+        ;;
+    
+    show-task)
+        tID="$1"; shift || { echo "Missing ID"; exit 2; }           #Get task ID and shift args, error handling
+        cat "$taskDir/${tID}.task"              #Print contents of specified task file
+        ;;
+
+    show-workflow)
+        wID="$1"; shift || { echo "Missing ID"; exit 2; }           #Get workflow ID and shift args, error handling
+        cat "$workflowDir/${wID}.workflow"              #Print contents of specified workflow file
+        ;;
+    
+    *)          #Default
+        usage ;;
+esac
